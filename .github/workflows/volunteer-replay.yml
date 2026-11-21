@@ -1,0 +1,91 @@
+name: Volunteer Replay Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      assignments:
+        description: 'Space-separated TARGET:ISSUE pairs (e.g. M001234:9450 M005678:9451)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - name: Free runner disk space for Lean + Mathlib cache
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Ensure elan is installed
+        run: |
+          if ! command -v elan >/dev/null 2>&1; then
+            if sudo apt-get update -qq && sudo apt-get install -y elan; then
+              echo "Installed elan via apt"
+            else
+              curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+              echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+            fi
+          fi
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan --version
+
+      - name: Prepare immutable Lean 4.33.1 + Mathlib volume
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          WORK_BASE="/mnt/rh-replay"
+          if ! sudo mkdir -p "$WORK_BASE" 2>/dev/null; then
+            WORK_BASE="$RUNNER_TEMP/rh-replay"
+            mkdir -p "$WORK_BASE"
+          else
+            sudo chown -R "$USER:$USER" "$WORK_BASE"
+          fi
+
+          for attempt in 1 2 3; do
+            WORK_DIR="$WORK_BASE/vol-$attempt"
+            rm -rf "$WORK_DIR"
+            echo "=== Prepare attempt $attempt in $WORK_DIR ==="
+            if ./verify.sh "$WORK_DIR" --prepare-only; then
+              rm -rf "$WORK_DIR/parts"
+              echo "WORK_DIR=$WORK_DIR" >> "$GITHUB_ENV"
+              df -h "$WORK_DIR"
+              exit 0
+            fi
+            echo "Prepare attempt $attempt failed; cleaning up before retry..."
+            rm -rf "$WORK_DIR"
+            sleep 15
+          done
+          echo "All prepare attempts failed." >&2
+          exit 1
+
+      - name: Build and kernel-verify targets (unprivileged, no GitHub token)
+        env:
+          INPUT_ASSIGNMENTS: ${{ inputs.assignments }}
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          python3 tools/ci_replay_runner.py --phase build
+
+      - name: Publish verified evidence to fork Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORK_REPO: ${{ github.repository }}
+        run: |
+          python3 tools/ci_replay_runner.py --phase publish
+
+      - name: Upload submission summaries artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: replay-submissions-${{ github.run_id }}
+          path: ${{ runner.temp }}/replay-submissions
+          if-no-files-found: warn
