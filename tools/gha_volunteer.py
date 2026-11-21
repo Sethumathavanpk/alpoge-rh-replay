@@ -117,7 +117,7 @@ def rank_candidates(rows, busy, max_closure=30):
     return cands
 
 
-def claim_and_wait_grant(target, owner, poll_seconds=10, timeout_seconds=300):
+def claim_and_wait_grant(target, owner, poll_seconds=12, timeout_seconds=1200):
     body = (
         f'I am working on {target}. '
         f'I will attach the input hashes, build transcript and receipt, or close this claim if I stop.'
@@ -155,7 +155,9 @@ def claim_and_wait_grant(target, owner, poll_seconds=10, timeout_seconds=300):
             print(f'Granted `{target}` on #{number}!', flush=True)
             return number
 
-    print(f'Timed out waiting for grant on #{number}; leaving open or check manually.', file=sys.stderr)
+    print(f'Timed out waiting for grant on #{number}; closing reservation cleanly...', file=sys.stderr, flush=True)
+    gh('api', '--method', 'PATCH', f'repos/{UPSTREAM}/issues/{number}',
+       '--input', '-', input_text=json.dumps({'state': 'closed'}))
     return None
 
 
