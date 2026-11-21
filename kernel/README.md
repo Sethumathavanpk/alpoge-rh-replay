@@ -1,10 +1,15 @@
 # Independent-kernel pilot
 
 **Status: optional pilot. This is not part of the required replay, and it
-does not check the project's proof of the Riemann Hypothesis.** It checks
-one small, precisely delimited thing: the *statement cone* — the
-declarations that define `RiemannHypothesis` and `riemannZeta` in Mathlib —
-with a kernel implementation that is independent of Lean's own kernel.
+does not check the project's full proof of the Riemann Hypothesis.** It
+currently covers two self-contained stages with a kernel implementation
+(`nanoda_lib`, in Rust) that is independent of Lean's own C++ kernel:
+
+1. **Statement cone (`independent-check.sh`):** the declarations that define
+   `RiemannHypothesis` and `riemannZeta` in Mathlib.
+2. **Project packet cone (`packet_check.py`):** every declaration in a
+   completed 64-module project packet (`P0001`) from `tracker/modules.jsonl.gz`
+   together with its transitive Mathlib dependency cone.
 
 ## Why
 
@@ -126,30 +131,107 @@ pilot's PASS is not a vacuous one.
 
 ## What this does and does not establish
 
-It establishes that Mathlib's definitions of the RH statement and of
-`riemannZeta`, together with everything those definitions transitively
-rest on, type-check under an independent kernel implementation — the
-anchor definitions are not somehow acceptable only to Lean's own kernel.
+It establishes that:
 
-It does **not** check the project's proof. `riemannHypothesis` lives in
-the project's `Main`, which this pilot never imports, and no full build of
-`Main` has been produced by anyone yet. Extending independent checking to
-the proof is the follow-on work, gated on a completed build.
+- Mathlib's definitions of the RH statement and of `riemannZeta`, together
+  with everything those definitions transitively rest on, type-check under
+  an independent kernel implementation; and
+- an entire 64-module project proof packet (`P0001`: 8,914 lines of Lean,
+  1,393 module-level declarations across automorphic forms, Harish-Chandra
+  modules, adelic analysis, stable lattices, and abelian variety block
+  theory) and its full transitive Mathlib cone also type-check cleanly in
+  strict mode under `nanoda`, using only the three standard axioms
+  `Audit.lean` permits.
+
+It does **not** check the project's full proof of RH. `riemannHypothesis`
+lives in the project's `Main`, which neither script imports, and no full
+build of `Main` has been produced by anyone yet. Extending independent
+checking to `Main` remains gated on a completed build.
+
+## Project packet cone: `P0001` (64 modules, measured 2026-11-21)
+
+`python3 kernel/packet_check.py <prepared-volume-dir> <packet-id> [output-dir] [--jobs N]`:
+
+1. Verifies the pinned Lean 4.33.1 toolchain, Mathlib commit
+   `0df444a360eaa60ab8c11dca51a86af692955474`, and every packet module's
+   `source_sha256` from `tracker/modules.jsonl.gz`, copying sources to
+   `<output-dir>/<packet-id>/src` without touching the prepared volume.
+2. Compiles the packet's modules in topological order into
+   `<output-dir>/<packet-id>/lib` using `lakefile.toml`'s Lean options, then
+   imports all of them into `PacketRoot_<packet-id>` and inspects
+   `env.header.moduleData` to collect every non-internal and user-`private`
+   declaration defined by the packet's modules.
+3. Exports those root declarations and their transitive dependency cone with
+   `lean4export` (NDJSON 3.1.0), strictly counts every declaration record in
+   the stream, and checks the export with `nanoda` in strict mode
+   (`unpermitted_axiom_hard_error: true`).
+
+Machine: AMD Ryzen 7 5800H (8 cores / 16 threads), Windows 11, 16 GB RAM.
+All steps capped at 4 threads (`--jobs 4`) under shared load (another Lean
+build was running concurrently on the same host).
+
+| Step | Wall time | Peak RSS | Result |
+| --- | --- | --- | --- |
+| Compile 64 `P0001` modules + root (Lean 4.33.1) | 2,086.5 s | 3.69 GB | 64/64 `.olean`s built; 1,393 root declarations collected (44.1 s) |
+| lean4export of `P0001` cone | 84.0 s | 4.49 GB | 772,117,861 bytes NDJSON (14,317,783 lines) |
+| nanoda check (strict mode, 4 threads) | 72.8 s | 0.89 GB | **exit 0 — Checked 91,889 declarations, no typechecker errors** |
+
+Packet `P0001` export facts:
+
+- Packet contents (`M000001`–`M002450`, depth 0, 8,914 source lines):
+  `env.header.moduleData` across the 64 modules contains 2,061 safe
+  constants (`unsafe_skipped = 0`) — **1,393** root declarations passed to
+  `lean4export` (1,382 public non-internal + 11 `private`) plus 668
+  elaborator-generated internal auxiliaries (`_proof_*`, `_simp_*`) pulled in
+  transitively where referenced. Within the 64 modules themselves: 1,189
+  theorems, 800 definitions, 24 inductives, 24 constructors, 24 recursors,
+  0 opaque, 0 quot, 0 axioms.
+- Exported cone declaration records: **88,700** — 68,937 theorems, 18,202
+  definitions, 1,497 inductives, 57 opaque, 4 quot, and 3 axioms:
+  `propext`, `Quot.sound`, `Classical.choice`. `nanoda` reports
+  `Checked 91889 declarations with no typechecker errors` (counting
+  constructors and recursors inside inductive blocks individually) and exits
+  with status 0 under `unpermitted_axiom_hard_error: true`.
+- SHA-256 of the `P0001` export:
+  `1681eba8c6acb56b64d47b108b96680285a0e310b4f34f358a54b53c8b05fd2a`
+  (meta line: `lean4export` 3.1.0, format 3.1.0, Lean 4.33.1 githash
+  `819816b2e0a3bf405af45ae5c7af2491d8f5bee6`).
 
 ## Is a full-environment independent check plausible?
 
-Measured here: the 2-declaration statement cone is 347 MB and ~51k
-declaration records; nanoda checked it in 35 s using 0.42 GB. **Checking
-is not the bottleneck — exporting is.** The exporter took about a minute
-and 6.1 GB just to load the Mathlib environment and write this cone.
+Comparing the 2-declaration statement cone (`Pilot.lean`) against the
+64-module project packet cone (`P0001`):
 
-A full-environment export (all of Mathlib plus the project's 175,187
-modules) was **not** attempted and its size is unknown; it would
-plausibly reach tens of GB (an extrapolation from this cone, not a
-measurement). The sensible next step is to export the cone of one
-completed project packet once built modules exist, and measure how the
-export grows, before committing to a full-environment stage. Nothing in
-the checker numbers above suggests nanoda would be the limiting factor.
+| Metric | `Pilot.lean` (statement cone) | `P0001` (64-module packet) | Ratio |
+| --- | ---: | ---: | ---: |
+| Root declarations exported | 2 | 1,393 | 696.5× |
+| NDJSON export size | 347,115,719 B (347.1 MB) | 772,117,861 B (772.1 MB) | **2.22×** |
+| NDJSON declaration records | 51,214 | 88,700 | **1.73×** |
+| `thm` / `def` / `inductive` | 40,045 / 10,149 / 967 | 68,937 / 18,202 / 1,497 | 1.72× / 1.79× / 1.55× |
+| `opaque` / `quot` / `axiom` | 46 / 4 / 3 | 57 / 4 / 3 | 1.24× / 1.00× / 1.00× |
+| `nanoda` checked declarations | 53,240 | 91,889 | **1.73×** |
+| `lean4export` wall time | 61.3 s | 84.0 s | 1.37× |
+| `nanoda` strict-mode check | 36.0 s (6 threads, 0.42 GB) | 72.8 s (4 threads, 0.89 GB) | ~1,260–1,480 decls/s |
+
+Two takeaways stand out from scaling 2 Mathlib anchors up to 64 project
+modules:
+
+1. **Sublinear Mathlib cone growth.** Although `P0001` spans 64 modules
+   across distinct areas of algebra, analysis, geometry, and representation
+   theory (1,393 root declarations), the exported cone grows by only
+   **1.73× in declaration records** (+37,486) and **2.22× in bytes**
+   (+425 MB) over the 2-declaration `riemannZeta` cone. Roughly 97.7% of
+   `P0001.ndjson`'s declarations are shared Mathlib prerequisites; the 64
+   project modules themselves contribute ~2,000 constants. Because Mathlib is
+   a fixed, shared base (~200k declarations total), unioning additional
+   packets saturates the Mathlib portion rather than multiplying it linearly
+   across all 2,858 packets; beyond the shared Mathlib base, incremental
+   growth comes from the project declarations themselves.
+2. **Checking remains fast and low-memory.** Once `.olean`s exist, exporting
+   all 64 modules took 84 s (4.49 GB RSS) and `nanoda` checked all 91,889
+   declarations in strict mode in 72.8 s using **0.89 GB RSS** on 4 threads.
+   Neither `lean4export` nor `nanoda` shows superlinear blowup at packet
+   scale; compiling the project `.olean`s remains the dominant cost.
 
 ## Tool pins and version coupling
 
@@ -190,7 +272,14 @@ consumed it successfully, and it remains an obvious second opinion.
 ## Layout
 
 - `Pilot.lean` — the Mathlib-only anchor module.
-- `independent-check.sh` — the whole pipeline; prints
+- `independent-check.sh` — statement-cone pipeline; prints
   `INDEPENDENT_KERNEL_PASSED` on success.
+- `packet_check.py` — packet-level pipeline (compiles any packet from
+  `tracker/modules.jsonl.gz` whose project imports are built, exports all
+  packet declarations and their cone with `lean4export`, and checks the
+  export in strict mode with `nanoda`); prints
+  `PACKET_INDEPENDENT_KERNEL_PASSED` on success.
+- `test_packet_check.py` — unit tests for `packet_check.py`
+  (`python3 -m unittest discover -s kernel -p 'test_*.py' -v`).
 - `tools.lock` — every pin, with reference-build hashes.
 - This README.
