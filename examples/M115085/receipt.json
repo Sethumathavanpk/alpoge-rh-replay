@@ -1,0 +1,42 @@
+{
+  "task": "M115085",
+  "toolchain": "leanprover/lean4:v4.33.1",
+  "lean_commit": "819816b2e0a3bf405af45ae5c7af2491d8f5bee6",
+  "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474",
+  "lean_flags": [
+    "-j1",
+    "-DautoImplicit=false",
+    "-DrelaxedAutoImplicit=false",
+    "-DmaxSynthPendingDepth=3",
+    "-Dpp.unicode.fun=true",
+    "-DmaxHeartbeats=4000000",
+    "--tstack=400000"
+  ],
+  "sha256": {
+    "published": "a146021fbd4ff16721f129b01d37da386b5eef06ef8ae0bea8b008629acf26b9",
+    "revised": "41b2f0189990df66b79c94e0893552cdfb29f5bd4e3ff8e972d6b54c777a0f66",
+    "reference": "4746590fa656d511f480203ea88337471d8a85659fbb2869fad4f6f2b05c0a43",
+    "audit": "d323171daef85097f17dae364bb1770f3e97e5207fa857414a22066b6d4aca3d",
+    "diff": "5e59881aa62b97fcbc31f5dce1b00fb6060d20b2123ed52bcb9e319050ffa5be",
+    "transcript": "81574f66a9cbb60651c42a44ddc8229ec23d7d8facbe3dd89ff92dd4774e1c91"
+  },
+  "comparison": {
+    "source_lines": {
+      "published": 6170,
+      "revised": 214
+    },
+    "heartbeat_environment": "x86_64 Windows (x86_64-w64-windows-gnu), same eight imports, synchronous elaboration (-j1 -DElab.async=false) of all 25 public declarations; import loading and private helper declarations excluded.",
+    "published_heartbeats": 37478,
+    "revised_heartbeats": 13911,
+    "published_total_heartbeats": 48990,
+    "revised_total_heartbeats": 15072
+  },
+  "audit": {
+    "rfl_checks_compiled": 25,
+    "metadata": "Matched public binder names, visibility and universes for 25 declarations",
+    "axioms_all_public": "Verified standard axioms only ([propext, Classical.choice, Quot.sound]) across all 25 public declarations",
+    "axioms": "'UpperTheory.Reformulated.B.CovariantDegrees.continuous_rHom' depends on axioms: [propext, Classical.choice, Quot.sound]",
+    "kernel_replay": "leanchecker PublishedCovariantDegrees Development.AutomorphicArithmetic.IntegralCasts.CapelliIdentities.CovariantDegrees AuditAll"
+  },
+  "audit_platform": "x86_64 Windows (x86_64-w64-windows-gnu); Lean 4.33.1 with the official pinned Mathlib objects. The standalone script compiled the published reference, exact revised source, and AuditAll.lean, then replayed all three modules with leanchecker."
+}

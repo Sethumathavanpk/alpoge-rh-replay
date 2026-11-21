@@ -1,10 +1,10 @@
 name: Validate tracker data
 on:
   pull_request:
-    paths: ['examples/proof-reuse/**', 'tracker/**', 'completed/**', 'evidence/**', 'verify.sh', '.github/workflows/validate-tracker.yml']
+    paths: ['examples/M115085/**', 'examples/proof-reuse/**', 'tracker/**', 'completed/**', 'evidence/**', 'verify.sh', '.github/workflows/validate-tracker.yml']
   push:
     branches: [main]
-    paths: ['examples/proof-reuse/**', 'tracker/**', 'completed/**', 'evidence/**', 'verify.sh', '.github/workflows/validate-tracker.yml']
+    paths: ['examples/M115085/**', 'examples/proof-reuse/**', 'tracker/**', 'completed/**', 'evidence/**', 'verify.sh', '.github/workflows/validate-tracker.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,3 +21,5 @@ jobs:
         run: python3 -m unittest discover -s tracker -p 'test_*.py' -v
       - name: Run the proof scanner unit tests
         run: python3 -m unittest discover -s examples/proof-reuse -p 'test_*.py' -v
+      - name: Run the M115085 compression example unit tests
+        run: python3 -m unittest discover -s examples/M115085 -p 'test_*.py' -v
