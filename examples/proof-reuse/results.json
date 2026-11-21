@@ -1,52 +1,63 @@
 {
   "archive_manifest_sha256": "d2a5f82a86712b08ff1923e93eabd3dafe9bdd9a7758893384a0e418580aa719",
   "source_sha256": {
-    "ReplayTopology.lean": "b6050ce2c6e1815a314ceba504df527d399eac495c3e62c132c59b4d2ff26af0",
-    "check.py": "fcea5921cde74e2c7f39b529047f8f499296005ac2f61eadf3e8b556b5265953",
+    "ReplayTopology.lean": "05fc2d3459661473e3cb7808d8e01cfd81b6b9189c3831b8fb3b6437c2fcd39c",
+    "ReplayAlgebra.lean": "e580e86648ca44ed395c6d94d3c88f80e5191eff41f64982b551f65d9ebf3e09",
+    "check.py": "ac43bbad29b7fe0eb87137d37aedcbc5e44e7fc541aa1ee0ea08367078007f37",
     "scan.py": "a47955c6e7262648b4efa9d58697eb31243ca076dca17c33207fad059e463c19"
   },
   "runs": [
     {
-      "execution": "native AArch64 Linux container",
-      "compiler": "Lean (version 4.33.1, aarch64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)",
+      "execution": "native x86-64 Windows (AMD Ryzen 7 5800H)",
+      "compiler": "Lean (version 4.33.1, x86_64-w64-windows-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)",
       "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474",
-      "kernel_replayed": "ReplayTopology",
+      "kernel_replayed": [
+        "ReplayTopology",
+        "ReplayAlgebra"
+      ],
       "checked": {
+        "cardQuot_under_eq_pow_inertiaDeg": 27,
+        "continuous_charpoly_coeff": 14,
         "continuous_unitsHom": 19,
+        "isLocalHom_of_isIntegral": 9,
+        "not_isTotallyReal_and_isTotallyComplex": 15,
+        "padicAlgCl_isIntegral_iff_norm_le_one": 12,
+        "specMap_ofHom_comp": 84,
         "totallyDisconnected_quotient": 14
       },
       "heartbeats": {
         "Original": {
-          "continuous_unitsHom": 3105,
-          "totallyDisconnected_quotient": 8753
+          "cardQuot_under_eq_pow_inertiaDeg": 39097,
+          "continuous_charpoly_coeff": 3940,
+          "continuous_unitsHom": 4037,
+          "isLocalHom_of_isIntegral": 30812,
+          "not_isTotallyReal_and_isTotallyComplex": 854,
+          "padicAlgCl_isIntegral_iff_norm_le_one": 14042,
+          "specMap_ofHom_comp": 15105,
+          "totallyDisconnected_quotient": 9886
         },
         "Shared": {
-          "continuous_unitsHom": 1925,
-          "totallyDisconnected_quotient": 658
+          "cardQuot_under_eq_pow_inertiaDeg": 2297,
+          "continuous_charpoly_coeff": 897,
+          "continuous_unitsHom": 2248,
+          "isLocalHom_of_isIntegral": 1359,
+          "not_isTotallyReal_and_isTotallyComplex": 255,
+          "padicAlgCl_isIntegral_iff_norm_le_one": 637,
+          "specMap_ofHom_comp": 9842,
+          "totallyDisconnected_quotient": 714
         }
       },
-      "library_heartbeats": 840
-    },
-    {
-      "execution": "x86-64 Linux container under emulation on Apple Silicon",
-      "compiler": "Lean (version 4.33.1, x86_64-unknown-linux-gnu, commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6, Release)",
-      "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474",
-      "kernel_replayed": "ReplayTopology",
-      "checked": {
-        "continuous_unitsHom": 19,
-        "totallyDisconnected_quotient": 14
+      "library_heartbeats_by_lemma": {
+        "continuous_unitsHom": 188,
+        "totallyDisconnected_quotient": 684,
+        "continuous_charpoly_coeff": 276,
+        "specMap_ofHom_comp": 188,
+        "cardQuot_under_eq_pow_inertiaDeg": 1135,
+        "not_isTotallyReal_and_isTotallyComplex": 56,
+        "padicAlgCl_isIntegral_iff_norm_le_one": 1176,
+        "isLocalHom_of_isIntegral": 3448
       },
-      "heartbeats": {
-        "Original": {
-          "continuous_unitsHom": 3105,
-          "totallyDisconnected_quotient": 8753
-        },
-        "Shared": {
-          "continuous_unitsHom": 1925,
-          "totallyDisconnected_quotient": 658
-        }
-      },
-      "library_heartbeats": 840
+      "library_heartbeats": 7151
     }
   ]
 }

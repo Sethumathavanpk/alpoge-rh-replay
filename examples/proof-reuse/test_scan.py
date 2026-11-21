@@ -36,6 +36,15 @@ class ProofScanTests(unittest.TestCase):
     def test_ignores_possible_multiline_comment_content(self):
         self.assertEqual(list(scan.declarations(b'/-\ntheorem a : True := by\n  trivial\n-/')), [])
 
+    def test_results_record_matches_source_digests(self):
+        here = Path(__file__).resolve().parent
+        results = json.loads((here / 'results.json').read_text(encoding='utf-8'))
+        for filename, expected_sha in results['source_sha256'].items():
+            raw = (here / filename).read_bytes().replace(b'\r\n', b'\n')
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), expected_sha, filename)
+        latest = results['runs'][0]
+        self.assertEqual(sum(latest['checked'].values()), 194)
+
 
 if __name__ == '__main__':
     unittest.main()
